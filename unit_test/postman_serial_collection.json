@@ -1,0 +1,215 @@
+{
+  "info": {
+    "_postman_id": "6569c651-2889-4583-9563-7884068a6051",
+    "name": "中佳寬頻",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "3850179"
+  },
+  "item": [
+    {
+      "name": "序號管理系統",
+      "item": [
+        {
+          "name": "批次新增序號",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-KEY",
+                "value": "OWQxZGI5YWItOTNmZS00ZmVmLWFkNDEtZDFlNzUxMmRmOTNlIDk1OTVjNjU1LTRhN2ItNGUzZi05MTEwLTA3YjMzOTZmNzhhMw==",
+                "type": "text",
+                "disabled": true
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer xai-SRL57NLDwIMFrQDSUuVw7U4DTAiajFanG5iKJAqIM4sJ52fElFqOQrk8YYa1n7CuwWYnNNw50LIbuHfd",
+                "type": "text",
+                "disabled": true
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"activity_name\": \"春節序號大放送_5\",\r\n    \"activity_unique_id\": \"spring_005\",\r\n    \"start_date\": \"2026-01-28 16:00:00\",\r\n    \"end_date\": \"2026-02-15 23:59:59\",\r\n    \"quota\": 10\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://homestead10.com/api/serials_insert",
+              "protocol": "http",
+              "host": [
+                "homestead10",
+                "com"
+              ],
+              "path": [
+                "api",
+                "serials_insert"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "批次追加序號",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-KEY",
+                "value": "OWQxZGI5YWItOTNmZS00ZmVmLWFkNDEtZDFlNzUxMmRmOTNlIDk1OTVjNjU1LTRhN2ItNGUzZi05MTEwLTA3YjMzOTZmNzhhMw==",
+                "type": "text",
+                "disabled": true
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer xai-SRL57NLDwIMFrQDSUuVw7U4DTAiajFanG5iKJAqIM4sJ52fElFqOQrk8YYa1n7CuwWYnNNw50LIbuHfd",
+                "type": "text",
+                "disabled": true
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"activity_unique_id\": \"spring_005\",\r\n    \"start_date\": \"2026-01-20 16:00:00\",\r\n    \"end_date\": \"2026-02-28 23:59:59\",\r\n    \"quota\": 2,\r\n    \"note\": \"這邊要填寫追加的原因\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://homestead10.com/api/serials_additional_insert",
+              "protocol": "http",
+              "host": [
+                "homestead10",
+                "com"
+              ],
+              "path": [
+                "api",
+                "serials_additional_insert"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "核銷序號",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-KEY",
+                "value": "OWQxZGI5YWItOTNmZS00ZmVmLWFkNDEtZDFlNzUxMmRmOTNlIDk1OTVjNjU1LTRhN2ItNGUzZi05MTEwLTA3YjMzOTZmNzhhMw==",
+                "type": "text",
+                "disabled": true
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer xai-SRL57NLDwIMFrQDSUuVw7U4DTAiajFanG5iKJAqIM4sJ52fElFqOQrk8YYa1n7CuwWYnNNw50LIbuHfd",
+                "type": "text",
+                "disabled": true
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"content\": \"G1299938\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://homestead10.com/api/serials_redeem",
+              "protocol": "http",
+              "host": [
+                "homestead10",
+                "com"
+              ],
+              "path": [
+                "api",
+                "serials_redeem"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "註銷序號",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-KEY",
+                "value": "OWQxZGI5YWItOTNmZS00ZmVmLWFkNDEtZDFlNzUxMmRmOTNlIDk1OTVjNjU1LTRhN2ItNGUzZi05MTEwLTA3YjMzOTZmNzhhMw==",
+                "type": "text",
+                "disabled": true
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer xai-SRL57NLDwIMFrQDSUuVw7U4DTAiajFanG5iKJAqIM4sJ52fElFqOQrk8YYa1n7CuwWYnNNw50LIbuHfd",
+                "type": "text",
+                "disabled": true
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"content\": [\r\n        \"A123\",\r\n        \"A789\",\r\n        \"A456\"\r\n    ],\r\n    \"note\": \"\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://homestead10.com/api/serials_cancel",
+              "protocol": "http",
+              "host": [
+                "homestead10",
+                "com"
+              ],
+              "path": [
+                "api",
+                "serials_cancel"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
