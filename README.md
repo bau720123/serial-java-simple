@@ -12,6 +12,54 @@
 
 ---
 
+完整 Java 25 相容版本
+
+## 技術棧
+
+| 項目 | 版本 / 技術 |
+|------|------------|
+| 框架 | **Spring Boot 4.0.2** |
+| Java | **Java 25**（完整支援）|
+| Web 容器 | Tomcat / Servlet 6.1（Jakarta EE 11）|
+| ORM | Spring Data JPA + Hibernate（JPA 3.2）|
+| 模板引擎 | Thymeleaf（後台介面）|
+| 驗證 | Bean Validation 3.1（jakarta.validation）|
+| JSON | Jackson 3 |
+| 資料庫 | SQL Server（mssql-jdbc）|
+| 測試 | JUnit Jupiter 6（暫時沒用到） |
+| 並發 | Virtual Threads（Java 25 原生支援）|
+
+---
+
+### 環境需求
+- Java 25+ ✅
+- Maven 3.9+
+- SQL Server 2019+
+
+### 1. Clone 專案
+```bash
+git clone <YOUR_REPOSITORY_URL>
+cd serial-java-simple
+```
+
+### 2. 設定資料庫連線
+```bash
+# 複製範例配置檔案
+cp application.properties.example src/main/resources/application.properties
+
+# 編輯 application.properties，填入實際的資料庫資訊
+# - spring.datasource.url
+# - spring.datasource.username
+# - spring.datasource.password
+```
+
+### 3. 編譯與啟動
+```powershell
+.\mvnw clean spring-boot:run
+```
+
+---
+
 ## 🛠 API 介面詳細定義
 
 ### 1. 批次新增序號
