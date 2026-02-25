@@ -11,9 +11,11 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
 
+import java.lang.reflect.Field;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * REST API Controller - 序號管理
@@ -305,15 +307,30 @@ public class SerialController {
     // =========================================================================
 
     /**
-     * 將 BindingResult 轉換為 Laravel 格式的驗證錯誤回應
+     * 將 BindingResult 轉換為 Laravel 格式的驗證錯誤回應，且依 DTO 欄位宣告順序排列
      * 對應 Laravel: response()->json(['status' => 'error', 'errors' => $validator->errors()], 422)
      *
-     * Laravel errors() 格式：{ "field_name": ["error message"] }
-     * Java BindingResult 格式：FieldError 物件列表
+     * 注意（Java vs Laravel 差異）：
+     *   Laravel 的 Validator::make() 錯誤依照 rules 陣列的定義順序輸出
+     *   Spring 的 BindingResult.getFieldErrors() 順序不固定（依 Validator 實作而定）
+     *   此處使用反射取得 DTO 的欄位宣告順序，再對錯誤清單排序，確保每次輸出順序一致
      */
     private Map<String, Object> buildValidationError(BindingResult bindingResult) {
+        // 取得 DTO 欄位宣告順序（透過 Java Reflection）
+        List<String> fieldOrder = getDeclaredFieldOrder(bindingResult.getTarget());
+
+        // 依欄位宣告順序排序（Spring BindingResult 預設不保證順序）
+        List<FieldError> sortedErrors = bindingResult.getFieldErrors().stream()
+                .sorted(Comparator.comparingInt(error -> {
+                    // 去除陣列索引（如 content[2] → content）再查找順序
+                    String baseField = error.getField().replaceAll("\\[\\d+\\]", "");
+                    int idx = fieldOrder.indexOf(baseField);
+                    return idx >= 0 ? idx : Integer.MAX_VALUE;
+                }))
+                .collect(Collectors.toList());
+
         Map<String, List<String>> errors = new LinkedHashMap<>();
-        for (FieldError error : bindingResult.getFieldErrors()) {
+        for (FieldError error : sortedErrors) {
             // 將 camelCase 欄位名稱轉換為 snake_case（對應 Laravel JSON key 格式）
             String fieldName = toSnakeCase(error.getField());
             errors.computeIfAbsent(fieldName, k -> new ArrayList<>())
@@ -327,7 +344,7 @@ public class SerialController {
     }
 
     /**
-     * 批次註銷序號的驗證錯誤格式化
+     * 批次註銷序號的驗證錯誤格式化（含欄位宣告順序排序）
      * 特殊處理：對 content[N] 的 size 錯誤，附加實際的序號值
      * 對應 Laravel 的 custom Replacer:
      *   $message = str_replace(':value', "[{$value}]", $message)
@@ -335,8 +352,30 @@ public class SerialController {
     private Map<String, Object> buildCancelValidationError(
             BindingResult bindingResult, SerialCancelRequest request) {
 
+        List<String> fieldOrder = getDeclaredFieldOrder(request);
+
+        // 依欄位宣告順序排序，陣列元素則進一步依索引 N 排序
+        List<FieldError> sortedErrors = bindingResult.getFieldErrors().stream()
+                .sorted(Comparator.comparingInt((FieldError error) -> {
+                    String baseField = error.getField().replaceAll("\\[\\d+\\]", "");
+                    int idx = fieldOrder.indexOf(baseField);
+                    return idx >= 0 ? idx : Integer.MAX_VALUE;
+                }).thenComparingInt(error -> {
+                    // content[N] 的 N（確保陣列錯誤依序號索引排列）
+                    String field = error.getField();
+                    if (field.contains("[")) {
+                        try {
+                            int s = field.indexOf('[') + 1;
+                            int e = field.indexOf(']');
+                            return Integer.parseInt(field.substring(s, e));
+                        } catch (NumberFormatException ignored) {}
+                    }
+                    return 0;
+                }))
+                .collect(Collectors.toList());
+
         Map<String, List<String>> errors = new LinkedHashMap<>();
-        for (FieldError error : bindingResult.getFieldErrors()) {
+        for (FieldError error : sortedErrors) {
             String fieldName = error.getField();
             String message = error.getDefaultMessage();
 
@@ -344,7 +383,6 @@ public class SerialController {
             // 對應 Laravel: $message = str_replace(':value', "[{$value}]", $message)
             if (fieldName.startsWith("content[") && request.getContent() != null) {
                 try {
-                    // 從 content[N] 中取出索引 N
                     int start = fieldName.indexOf('[') + 1;
                     int end = fieldName.indexOf(']');
                     int index = Integer.parseInt(fieldName.substring(start, end));
@@ -352,9 +390,7 @@ public class SerialController {
                         String actualValue = request.getContent().get(index);
                         message = message + "（出錯的序號：[" + actualValue + "]）";
                     }
-                } catch (NumberFormatException ignored) {
-                    // 無法解析索引，保留原始訊息
-                }
+                } catch (NumberFormatException ignored) {}
             }
 
             String snakeCaseField = toSnakeCase(fieldName);
@@ -366,6 +402,21 @@ public class SerialController {
         body.put("message", "驗證失敗");
         body.put("errors", errors);
         return body;
+    }
+
+    /**
+     * 透過 Java Reflection 取得物件類別的欄位宣告順序（camelCase 欄位名稱列表）
+     * 用於確保 errors 依 DTO 欄位定義順序輸出（對應 Laravel Validator 的 rules 陣列順序）
+     *
+     * getDeclaredFields() 在 JVM 中保證依原始碼宣告順序回傳（含 Lombok 生成前的順序）
+     * isSynthetic() 過濾掉編譯器或 Lombok 插入的合成欄位
+     */
+    private List<String> getDeclaredFieldOrder(Object target) {
+        if (target == null) return Collections.emptyList();
+        return Arrays.stream(target.getClass().getDeclaredFields())
+                .filter(f -> !f.isSynthetic())
+                .map(Field::getName)
+                .collect(Collectors.toList());
     }
 
     /**

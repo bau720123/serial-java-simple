@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.ContentCachingRequestWrapper;
 import org.springframework.web.util.ContentCachingResponseWrapper;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -39,6 +40,11 @@ public class ApiLoggerFilter extends OncePerRequestFilter {
 
     @Autowired
     private SerialLogRepository serialLogRepository;
+
+    // 用於將請求 JSON 壓縮成單行（去除多餘空白）
+    // 對應 Laravel: json_encode($request->all(), JSON_UNESCAPED_UNICODE)（無 JSON_PRETTY_PRINT 旗標）
+    @Autowired
+    private ObjectMapper objectMapper;
 
     /**
      * URI 到 API 名稱的對應表
@@ -74,14 +80,25 @@ public class ApiLoggerFilter extends OncePerRequestFilter {
         // 4. 記錄回應結束時間（對應 Laravel: $responseAt = now()）
         LocalDateTime responseAt = LocalDateTime.now();
 
-        // 5. 讀取請求內容（JSON body）
+        // 5. 讀取請求內容（JSON body）並壓縮為單行
         //    對應 Laravel: json_encode($request->all(), JSON_UNESCAPED_UNICODE)
-        //    說明：ContentCachingRequestWrapper 在 Controller 讀取 @RequestBody 後，
-        //          快取已填充，此時可以安全讀取
+        //    Laravel 的 json_encode 預設輸出無空白的單行 JSON
+        //    Java 的 ContentCachingRequestWrapper 保留原始格式（含客戶端傳入的空白），
+        //    因此需要 parse + re-serialize 來確保儲存的是緊湊格式
         byte[] requestBody = requestWrapper.getContentAsByteArray();
-        String requestJson = requestBody.length > 0
-                ? new String(requestBody, StandardCharsets.UTF_8)
-                : "{}";
+        String requestJson;
+        if (requestBody.length > 0) {
+            try {
+                // 解析後重新序列化 → 自動壓縮成單行（無縮排、無多餘空白）
+                Object parsed = objectMapper.readValue(requestBody, Object.class);
+                requestJson = objectMapper.writeValueAsString(parsed);
+            } catch (Exception e) {
+                // 解析失敗（如非 JSON 格式）時，保留原始內容
+                requestJson = new String(requestBody, StandardCharsets.UTF_8);
+            }
+        } else {
+            requestJson = "{}";
+        }
 
         // 6. 讀取回應內容（JSON）
         //    對應 Laravel: json_encode(json_decode($response->getContent(), true))
@@ -103,9 +120,19 @@ public class ApiLoggerFilter extends OncePerRequestFilter {
 
         // 9. 寫入資料庫（對應 Laravel: DB::table('serial_log')->insert([...])）
         try {
+            // 正規化 IP 位址
+            // 對應 Laravel: $request->ip()
+            // 說明：本機連線時，Java 可能回傳 IPv6 loopback（0:0:0:0:0:0:0:1 即 ::1）
+            //       Laravel 在相同環境下回傳 127.0.0.1（IPv4）
+            //       此處統一轉換為 IPv4 表示法，保持一致性
+            String host = request.getRemoteAddr();
+            if ("0:0:0:0:0:0:0:1".equals(host) || "::1".equals(host)) {
+                host = "127.0.0.1";
+            }
+
             SerialLog log = new SerialLog();
             log.setApiName(apiName);
-            log.setHost(request.getRemoteAddr());   // 對應 Laravel: $request->ip()
+            log.setHost(host);                      // 對應 Laravel: $request->ip()
             log.setApi(fullUrl);                    // 對應 Laravel: $request->fullUrl()
             log.setRequest(requestJson);            // 對應 Laravel: json_encode($request->all())
             log.setRequestAt(requestAt);
