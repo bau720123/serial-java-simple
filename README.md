@@ -3,12 +3,12 @@
 本文件根據最新邏輯編寫，定義了活動建立、序號追加與核心核銷流程。
 
 ## 📋 基礎資訊
-- **Base URL**：http://yourdomain.com/api
+- **Base URL**：http://localhost:8080/api
 - **資料格式**：application/json
 - **全域 Middleware**：api.logger
 
 ## 📋 序號管理後台
-- **Base URL**：http://yourdomain.com/admin/serials
+- **Base URL**：http://localhost:8080/admin/serials
 
 ---
 
@@ -58,19 +58,34 @@
     "message": "驗證失敗",
     "errors": {
         "activity_name": [
-            "活動名稱 欄位為必填。"
+            "活動名稱 為必填欄位。"
         ],
         "activity_unique_id": [
-            "活動唯一 ID 欄位為必填。"
+            "活動唯一識別碼 為必填欄位"
         ],
         "start_date": [
-            "開始日期 欄位為必填。"
+            "活動開始時間 為必填欄位"
         ],
         "end_date": [
-            "結束日期 欄位為必填。"
+            "活動結束時間 為必填欄位"
         ],
         "quota": [
-            "產生數量 欄位為必填。"
+            "序號配額 為必填欄位"
+        ]
+    }
+}
+```
+
+```json
+{
+    "status": "error",
+    "message": "驗證失敗",
+    "errors": {
+        "start_date": [
+            "活動開始時間 格式必須為 yyyy-MM-dd HH:mm:ss"
+        ],
+        "end_date": [
+            "活動結束時間 格式必須為 yyyy-MM-dd HH:mm:ss"
         ]
     }
 }
@@ -82,7 +97,7 @@
     "message": "驗證失敗",
     "errors": {
         "activity_unique_id": [
-            "活動唯一 ID 已存在，請勿重複新增。"
+            "活動唯一識別碼 已存在，請勿重複新增"
         ]
     }
 }
@@ -94,8 +109,8 @@
     "message": "驗證失敗",
     "errors": {
         "end_date": [
-            "結束日期 必須晚於或等於 開始日期。",
-            "結束日期 不能早於當前時間，否則序號將立即過期。"
+            "活動結束時間 必須晚於或等於 開始日期",
+            "活動結束時間 不能早於當前時間，否則序號將立即過期"
         ]
     }
 }
@@ -107,7 +122,8 @@
     "message": "驗證失敗",
     "errors": {
         "quota": [
-            "產生數量 不能大於 100。"
+            "序號配額 最小值為 1",
+            "序號配額 最大值為 100"
         ]
     }
 }
@@ -160,19 +176,19 @@
     "message": "驗證失敗",
     "errors": {
         "activity_unique_id": [
-            "活動唯一 ID 欄位為必填。"
+            "活動唯一識別碼 為必填欄位"
         ],
         "start_date": [
-            "開始日期 欄位為必填。"
+            "序號開始時間 為必填欄位"
         ],
         "end_date": [
-            "結束日期 欄位為必填。"
+            "序號結束時間 為必填欄位"
         ],
         "quota": [
-            "產生數量 欄位為必填。"
+            "追加序號數量 為必填欄位"
         ],
         "note": [
-            "備註追加原因 欄位為必填。"
+            "追加說明備註 為必填欄位"
         ]
     }
 }
@@ -184,7 +200,22 @@
     "message": "驗證失敗",
     "errors": {
         "activity_unique_id": [
-            "所選擇的 活動唯一 ID 無效（該活動不存在）。"
+            "所選擇的 活動唯一識別碼 無效（該活動不存在）"
+        ]
+    }
+}
+```
+
+```json
+{
+    "status": "error",
+    "message": "驗證失敗",
+    "errors": {
+        "start_date": [
+            "序號開始時間 格式必須為 yyyy-MM-dd HH:mm:ss"
+        ],
+        "end_date": [
+            "序號結束時間 格式必須為 yyyy-MM-dd HH:mm:ss"
         ]
     }
 }
@@ -196,8 +227,8 @@
     "message": "驗證失敗",
     "errors": {
         "end_date": [
-            "結束日期 必須晚於或等於 開始日期。",
-            "結束日期 不能早於當前時間，否則序號將立即過期。"
+            "序號結束時間 必須晚於或等於 開始日期",
+            "序號結束時間 不能早於當前時間，否則序號將立即過期"
         ]
     }
 }
@@ -209,7 +240,8 @@
     "message": "驗證失敗",
     "errors": {
         "quota": [
-            "產生數量 不能大於 100。"
+            "追加序號數量 最小值為 1",
+            "追加序號數量 最大值為 100"
         ]
     }
 }
@@ -241,7 +273,7 @@
     "message": "核銷成功",
     "data": {
         "serial_content": "V8262397",
-        "redeemed_at": "2026-02-02 11:58:02"
+        "redeemed_at": "年-月-日 時:分:秒"
     }
 }
 ```
@@ -253,7 +285,19 @@
     "message": "驗證失敗",
     "errors": {
         "content": [
-            "序號內容 欄位為必填。"
+            "序號 為必填欄位"
+        ]
+    }
+}
+```
+
+```json
+{
+    "status": "error",
+    "message": "驗證失敗",
+    "errors": {
+        "content": [
+            "序號 必須是 8 碼字元"
         ]
     }
 }
@@ -283,14 +327,14 @@
 ```json
 {
     "status": "error",
-    "message": "此序號尚未生效"
+    "message": "此序號活動尚未開始 (開放時間：年-月-日 時:分:秒)"
 }
 ```
 
 ```json
 {
     "status": "error",
-    "message": "此序號已過期"
+    "message": "此序號已過期失效 (到期時間：年-月-日 時:分:秒)"
 }
 ```
 
@@ -323,7 +367,7 @@
 {
     "status": "success",
     "message": "全部註銷成功",
-    "cancel_at": "2026-02-05 17:06:52",
+    "cancel_at": "年-月-日 時:分:秒",
     "success_data": {
         "serial_content": "M1474740,Q9416259,A2337698"
     },
@@ -338,7 +382,7 @@
 {
     "status": "success",
     "message": "全部註銷失敗",
-    "cancel_at": "2026-02-05 17:04:28",
+    "cancel_at": "年-月-日 時:分:秒",
     "success_data": {
         "serial_content": ""
     },
@@ -353,7 +397,7 @@
 {
     "status": "success",
     "message": "部分註銷成功",
-    "cancel_at": "2026-02-05 17:16:52",
+    "cancel_at": "年-月-日 時:分:秒",
     "success_data": {
         "serial_content": "P8905479,M4220752"
     },
@@ -369,18 +413,19 @@
     "status": "error",
     "message": "驗證失敗",
     "errors": {
-        "content.0": [
-            "序號項目 [A1] 必須是 8 個字元。"
+        "content[0]": [
+            "序號必須是 8 碼字元（出錯的序號：[序號一]）"
         ],
-        "content.1": [
-            "序號項目 [A2] 必須是 8 個字元。"
+        "content[1]": [
+            "序號必須是 8 碼字元（出錯的序號：[序號一]）"
         ],
-        "content.2": [
-            "序號項目 [A3] 必須是 8 個字元。"
+        "content[2]": [
+            "序號必須是 8 碼字元（出錯的序號：[序號三]）"
         ]
     }
 }
 ```
+
 ```json
 {
     "status": "error",
@@ -388,6 +433,18 @@
     "errors": {
         "content": [
             "序號內容 一次最多只能處理 1000 筆。"
+        ]
+    }
+}
+```
+
+```json
+{
+    "status": "error",
+    "message": "驗證失敗",
+    "errors": {
+        "content": [
+            "註銷原因 為必填欄位"
         ]
     }
 }

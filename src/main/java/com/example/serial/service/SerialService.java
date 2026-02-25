@@ -181,7 +181,7 @@ public class SerialService {
         // 查找序號並鎖定該行（悲觀鎖）
         // 對應 Laravel: DB::table('serial_detail')->where('content', $content)->lockForUpdate()->first()
         SerialDetail serial = detailRepository.findByContentWithLock(content)
-                .orElseThrow(() -> new RuntimeException("序號不存在"));
+                .orElseThrow(() -> new RuntimeException("此序號不存在"));
 
         // ---- 業務邏輯條件檢查（對應 Laravel 的 if 系列判斷）----
         if (serial.getStatus() == 1) {
