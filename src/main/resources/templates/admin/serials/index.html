@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<!--
+    後台序號管理列表
+    對應 Laravel: resources/views/admin/serials/index.blade.php
+
+    架構差異說明（Blade vs Thymeleaf）：
+      Laravel {{ $var }}         → Thymeleaf th:text="${var}" 或 [[${var}]]
+      Laravel @if/@elseif/@else  → Thymeleaf th:if / th:unless / th:switch
+      Laravel @forelse/@empty    → Thymeleaf th:each + th:if="${#lists.isEmpty(...)}"
+      Laravel $list->links()     → Thymeleaf 手動建立分頁 HTML（無內建等效方法）
+      Laravel request('keyword') → Thymeleaf ${keyword}（由 Controller 傳入 Model）
+      Laravel {{ $list->links('pagination::bootstrap-5') }} → 自訂 Thymeleaf 分頁元件
+-->
+<html lang="zh-TW" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>序號管理系統 - 後台</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; font-family: "Microsoft JhengHei", sans-serif; }
+        .table-container { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .search-box { background: #ffffff; border-radius: 10px; padding: 20px; margin-bottom: 20px; border-left: 5px solid #0d6efd; }
+        .status-badge { width: 70px; display: inline-block; text-align: center; }
+    </style>
+    <style>
+    /* 針對手機版 (小於 576px) 的特殊優化 */
+    @media (max-width: 575.98px) {
+        .search-date-group {
+            flex-direction: column;
+            gap: 10px !important;
+        }
+        .btn-mobile-full {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        .mobile-btn-group {
+            display: flex;
+            flex-direction: column;
+        }
+    }
+    </style>
+</head>
+
+<body>
+
+<nav class="navbar navbar-dark bg-dark mb-4">
+    <div class="container-fluid">
+        <span class="navbar-brand mb-0 h1">管理後台 | 序號監控中心</span>
+    </div>
+</nav>
+
+<div class="container-fluid px-4">
+    <div class="search-box shadow-sm">
+        <!--
+            搜尋表單
+            對應 Laravel: <form action="/admin/serials" method="GET" id="searchForm">
+        -->
+        <form action="/admin/serials" method="GET" id="searchForm" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label fw-bold">關鍵字搜尋</label>
+                <!--
+                    對應 Laravel: value="{{ request('keyword') }}"
+                    Thymeleaf: th:value="${keyword}"（由 Controller 傳入 Model）
+                -->
+                <input type="text" name="keyword" class="form-control"
+                       placeholder="請輸入 活動名稱 或是 活動唯一 ID"
+                       th:value="${keyword}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-bold">序號</label>
+                <input type="text" name="content" class="form-control"
+                       placeholder="請輸入序號"
+                       th:value="${searchContent}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-bold">狀態</label>
+                <!--
+                    對應 Laravel:
+                      <option value="0" {{ request('status') === '0' ? 'selected' : '' }}>
+                    Thymeleaf: th:selected="${status != null && status == 0}"
+                -->
+                <select name="status" class="form-select">
+                    <option value="">請選取</option>
+                    <option value="0" th:selected="${status != null && status == 0}">未核銷</option>
+                    <option value="1" th:selected="${status != null && status == 1}">已核銷</option>
+                    <option value="2" th:selected="${status != null && status == 2}">已註銷</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-bold">搜尋區間</label>
+                <div class="d-flex gap-2 search-date-group">
+                    <input type="date" name="date_start" id="date_start" class="form-control"
+                           th:value="${dateStart}">
+                    <input type="date" name="date_end" id="date_end" class="form-control"
+                           th:value="${dateEnd}">
+                </div>
+            </div>
+            <div class="col-12 text-end">
+                <hr>
+                <div class="mobile-btn-group">
+                    <a href="/admin/serials" class="btn btn-light border btn-mobile-full">清除重置</a>
+                    <button type="submit" class="btn btn-primary px-5 btn-mobile-full">立即搜尋</button>
+                    <button type="button" id="exportBtn" class="btn btn-success px-4 btn-mobile-full">匯出 CSV</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="table-container shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle table-bordered text-center">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 15%;">活動名稱 / ID</th>
+                        <th style="width: 10%;">序號</th>
+                        <th style="width: 10%;">狀態</th>
+                        <th style="width: 15%;">更新時間</th>
+                        <th style="width: 15%;">有效期限 (起~迄)</th>
+                        <th style="width: 20%;">備註說明</th>
+                        <th style="width: 15%;">新增時間</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!--
+                        對應 Laravel: @forelse($list as $item) ... @empty ... @endforelse
+                        Thymeleaf: th:each + th:if 組合實現
+                    -->
+
+                    <!-- 有資料時顯示列表 -->
+                    <tr th:each="item : ${list.content}" th:if="${!list.content.isEmpty()}">
+                        <td>
+                            <!--
+                                對應 Laravel:
+                                  {{ $item->activity->activity_name ?? 'N/A' }}
+                                  {{ $item->activity->activity_unique_id ?? '-' }}
+                            -->
+                            <div class="fw-bold"
+                                 th:text="${item.activity != null ? item.activity.activityName : 'N/A'}">
+                                N/A
+                            </div>
+                            <small class="text-muted"
+                                   th:text="${item.activity != null ? item.activity.activityUniqueId : '-'}">
+                                -
+                            </small>
+                        </td>
+                        <td>
+                            <code class="fs-5" th:text="${item.content}">--------</code>
+                        </td>
+                        <td class="text-center">
+                            <!--
+                                對應 Laravel:
+                                  @if($item->status == 0) ... bg-success ... 未核銷
+                                  @elseif($item->status == 1) ... bg-success ... 已核銷
+                                  @elseif($item->status == 2) ... bg-dark ... 已註銷
+                                  @else ... bg-warning ... 未設定
+                                注意：Laravel 原始碼中 0 和 1 都使用 bg-success，此處完全對應原始行為
+                            -->
+                            <span th:if="${item.status == 0}"
+                                  class="badge bg-success status-badge">未核銷</span>
+                            <span th:if="${item.status == 1}"
+                                  class="badge bg-success status-badge">已核銷</span>
+                            <span th:if="${item.status == 2}"
+                                  class="badge bg-dark status-badge">已註銷</span>
+                            <span th:if="${item.status != 0 && item.status != 1 && item.status != 2}"
+                                  class="badge bg-warning text-dark status-badge">未設定</span>
+                        </td>
+                        <td th:text="${item.updatedAt != null ? item.updatedAt : '--'}">--</td>
+                        <td>
+                            <small th:text="${item.startDate}"></small><br>
+                            <small th:text="${item.endDate}"></small>
+                        </td>
+                        <td>
+                            <small class="text-muted"
+                                   th:text="${item.note != null ? item.note : '-'}">-</small>
+                        </td>
+                        <td>
+                            <small th:text="${item.createdAt}"></small>
+                        </td>
+                    </tr>
+
+                    <!-- 無資料時顯示（對應 Laravel @empty）-->
+                    <tr th:if="${list.content.isEmpty()}">
+                        <td colspan="7" class="text-center py-5 text-muted">目前沒有符合條件的資料</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!--
+            分頁元件
+            對應 Laravel: {{ $list->links('pagination::bootstrap-5') }}
+
+            架構差異（Java vs Laravel）：
+              Laravel paginate() 內建分頁連結生成（Bootstrap 5 格式）
+              Thymeleaf/Spring 無內建等效方法，需手動建立 HTML
+              此處實作行為等同 Laravel Bootstrap 5 分頁樣式：
+                - 上一頁 / 下一頁按鈕
+                - 所有頁碼列表
+                - 當前頁高亮
+                - URL 保留搜尋條件（對應 Laravel 的 withQueryString()）
+        -->
+        <div class="mt-4" th:if="${list.totalPages > 1}">
+            <nav aria-label="頁碼導覽">
+                <ul class="pagination justify-content-center">
+
+                    <!-- 上一頁 -->
+                    <li class="page-item" th:classappend="${list.first} ? 'disabled'">
+                        <a class="page-link"
+                           th:href="@{/admin/serials(page=${currentPage - 1},
+                               keyword=${keyword},
+                               content=${searchContent},
+                               status=${status},
+                               date_start=${dateStart},
+                               date_end=${dateEnd})}"
+                           th:if="${!list.first}">上一頁</a>
+                        <span class="page-link" th:if="${list.first}">上一頁</span>
+                    </li>
+
+                    <!-- 頁碼列表（1-indexed，對應 Laravel 預設行為）-->
+                    <li th:each="pageNum : ${pageNumbers}"
+                        class="page-item"
+                        th:classappend="${pageNum == currentPage} ? 'active'">
+                        <a class="page-link"
+                           th:text="${pageNum}"
+                           th:href="@{/admin/serials(page=${pageNum},
+                               keyword=${keyword},
+                               content=${searchContent},
+                               status=${status},
+                               date_start=${dateStart},
+                               date_end=${dateEnd})}">
+                        </a>
+                    </li>
+
+                    <!-- 下一頁 -->
+                    <li class="page-item" th:classappend="${list.last} ? 'disabled'">
+                        <a class="page-link"
+                           th:href="@{/admin/serials(page=${currentPage + 1},
+                               keyword=${keyword},
+                               content=${searchContent},
+                               status=${status},
+                               date_start=${dateStart},
+                               date_end=${dateEnd})}"
+                           th:if="${!list.last}">下一頁</a>
+                        <span class="page-link" th:if="${list.last}">下一頁</span>
+                    </li>
+
+                </ul>
+            </nav>
+
+            <!-- 顯示分頁資訊 -->
+            <p class="text-center text-muted small">
+                第 <span th:text="${currentPage}"></span> 頁，
+                共 <span th:text="${list.totalPages}"></span> 頁（
+                總計 <span th:text="${list.totalElements}"></span> 筆）
+            </p>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-4.0.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+/*
+ * 前端 JavaScript 邏輯
+ * 對應 Laravel Blade 模板中的 <script> 區塊（100% 相同）
+ * 無需修改，因為前端邏輯與後端框架無關
+ */
+$(document).ready(function() {
+    /**
+     * 過濾掉沒有值的欄位參數，回傳乾淨的參數物件
+     */
+    function getCleanParamsArray($form) {
+        let params = {};
+        $form.find('input[name], select[name]').each(function() {
+            const val = $(this).val().trim();
+            if (val !== "") {
+                params[$(this).attr('name')] = val;
+            }
+        });
+        return params;
+    }
+
+    // 搜尋按鈕
+    $('#searchForm').on('submit', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const start = $('#date_start').val();
+        const end = $('#date_end').val();
+
+        // 日期防呆
+        if (start && end && start > end) {
+            Swal.fire({
+                icon: 'error',
+                title: '日期設定錯誤',
+                text: '結束日期不能小於開始日期',
+                confirmButtonText: '確定',
+                confirmButtonColor: '#0d6efd'
+            });
+            return false;
+        }
+
+        const paramsObj = getCleanParamsArray($(this));
+        const queryString = $.param(paramsObj);
+        const baseUrl = $(this).attr('action');
+        window.location.href = baseUrl + (queryString ? '?' + queryString : '');
+    });
+
+    // 匯出按鈕（AJAX 方式，對應 Laravel 的 $.ajax export 邏輯）
+    $('#exportBtn').on('click', function() {
+        const $this = $(this);
+        const $form = $('#searchForm');
+        const paramsObj = getCleanParamsArray($form);
+
+        const start = $('#date_start').val();
+        const end = $('#date_end').val();
+        if (start && end && start > end) {
+            $form.submit();
+            return false;
+        }
+
+        $this.attr('disabled', true);
+        $this.prepend('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> ');
+
+        $.ajax({
+            url: '/admin/serials/export',
+            method: 'GET',
+            data: paramsObj,
+            xhrFields: {
+                responseType: 'blob'
+            },
+            success: function(data, status, xhr) {
+                // 從 Header 抓取後端給的建議檔名（對應 Laravel X-Suggested-Filename）
+                let fileName = xhr.getResponseHeader('X-Suggested-Filename');
+
+                const blob = new Blob([data], { type: 'text/csv' });
+                const link = document.createElement('a');
+                link.href = window.URL.createObjectURL(blob);
+                link.download = fileName;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            },
+            error: function(xhr, status, errorThrown) {
+                const statusCode = xhr.status;
+                let errorMessage = '匯出失敗';
+
+                if (statusCode === 404) {
+                    errorMessage = '找不到匯出路徑 (404)，請檢查路由設定';
+                } else if (statusCode === 500) {
+                    errorMessage = '伺服器內部錯誤 (500)，請檢查後端日誌';
+                } else if (status === 'timeout') {
+                    errorMessage = '請求逾時，資料量可能過大';
+                } else {
+                    errorMessage = '發生未知錯誤：' + errorThrown;
+                }
+
+                console.log({
+                    status: status,
+                    statusCode: statusCode,
+                    errorThrown: errorThrown,
+                    responseText: xhr.responseText
+                });
+
+                Swal.fire({
+                    icon: 'error',
+                    title: '匯出發生錯誤',
+                    text: errorMessage,
+                    confirmButtonText: '確定',
+                    confirmButtonColor: '#0d6efd'
+                });
+            },
+            complete: function() {
+                $this.attr('disabled', false);
+                $this.find('span.spinner-border').remove();
+            }
+        });
+    });
+});
+</script>
+
+</body>
+</html>

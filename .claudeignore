@@ -1,0 +1,36 @@
+# === Java 專屬排除清單 ===
+
+# 編譯產物 (Maven 或 Gradle 產生的 target/build)
+target/
+build/
+out/
+bin/
+
+# 依賴快取與工具設定
+.gradle/
+.mvn/
+wrapper/
+*.class
+*.jar
+*.war
+*.nar
+*.ear
+
+# IDE 專案設定檔 (Java 專案特別多這類檔案)
+.idea/
+*.iml
+.project
+.classpath
+.settings/
+.factorypath
+.vscode/
+
+# 敏感資訊與日誌
+*.log
+/logs/
+/tmp/
+
+# 系統與壓縮檔
+.DS_Store
+*.zip
+*.tar.gz
