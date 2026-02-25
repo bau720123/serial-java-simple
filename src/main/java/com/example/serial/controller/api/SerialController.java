@@ -55,7 +55,7 @@ public class SerialController {
 
         // 基本格式驗證（@NotBlank, @Min, @Max 等）
         if (bindingResult.hasErrors()) {
-            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_CONTENT)
                     .body(buildValidationError(bindingResult));
         }
 
@@ -102,7 +102,7 @@ public class SerialController {
             body.put("status", "error");
             body.put("message", "驗證失敗");
             body.put("errors", extraErrors);
-            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(body);
+            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_CONTENT).body(body);
         }
 
         try {
@@ -143,7 +143,7 @@ public class SerialController {
             BindingResult bindingResult) {
 
         if (bindingResult.hasErrors()) {
-            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_CONTENT)
                     .body(buildValidationError(bindingResult));
         }
 
@@ -186,7 +186,7 @@ public class SerialController {
             body.put("status", "error");
             body.put("message", "驗證失敗");
             body.put("errors", extraErrors);
-            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(body);
+            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_CONTENT).body(body);
         }
 
         try {
@@ -228,7 +228,7 @@ public class SerialController {
             BindingResult bindingResult) {
 
         if (bindingResult.hasErrors()) {
-            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_CONTENT)
                     .body(buildValidationError(bindingResult));
         }
 
@@ -264,7 +264,7 @@ public class SerialController {
             // 對應 Laravel 的 custom Replacer：對 content[N] 的 size 錯誤，顯示出錯的序號值
             // Java 的 BindingResult 錯誤訊息中包含 field path（如 content[2]），
             // buildCancelValidationError 會進一步附加實際的序號值
-            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_CONTENT)
                     .body(buildCancelValidationError(bindingResult, request));
         }
 
