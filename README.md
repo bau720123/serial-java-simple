@@ -484,9 +484,10 @@
 ```
 
 3. 核心邏輯機制
-   - 併發防禦：核銷流程採用 Pessimistic Locking（lockForUpdate） 悲觀鎖，確保在極短時間內重複請求時，資料的一致性與唯一性。
-   - 資料自動清洗：序號 content 欄位在核銷前，後端會自動執行 trim() 去除前後空白，並執行 strtoupper() 強制轉為大寫，增加使用者兌換的容錯率。
-   - 全程紀錄：所有請求與回應皆由 api.logger 寫入資料庫日誌表。
+   - 併發防禦（核銷）：核銷流程採用 Pessimistic Locking 悲觀鎖，透過 Spring Data JPA 的 `@Lock(LockModeType.PESSIMISTIC_WRITE)` 注解實作於 Repository 層，需搭配 `@Transactional` 方可生效。在 SQL Server 底層會產生 `WITH (UPDLOCK, HOLDLOCK)` 語法，與 Laravel 的 `lockForUpdate()` 行為等同，確保在極短時間內重複請求時，資料的一致性與唯一性。
+   - 併發防禦（批次註銷）：批次註銷流程採用 Spring 的 `TransactionTemplate` 程式化事務管理，讓每筆序號各自擁有獨立 Transaction（等同 Laravel 在 foreach 中逐筆呼叫 `DB::transaction()`）。單筆序號失敗時，僅回滾該筆的操作，不影響其他序號的處理結果，避免全批次連帶失敗。
+   - 資料自動清洗：序號 content 欄位在核銷與註銷前，後端會自動執行 `trim()` 去除前後空白，並執行 `toUpperCase()` 強制轉為大寫，增加使用者兌換的容錯率。
+   - 全程紀錄：所有請求與回應皆由 `ApiLoggerFilter`（對應 Laravel 的 `api.logger` Middleware）寫入資料庫日誌表。
 
 ## 🛡 全域中間件說明（Middleware: api.logger）
 
