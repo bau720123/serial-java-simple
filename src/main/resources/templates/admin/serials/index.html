@@ -22,18 +22,24 @@
         .table-container { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .search-box { background: #ffffff; border-radius: 10px; padding: 20px; margin-bottom: 20px; border-left: 5px solid #0d6efd; }
         .status-badge { width: 70px; display: inline-block; text-align: center; }
+        .pagination { --bs-pagination-padding-x: 0.45rem; }
     </style>
     <style>
     /* 針對手機版 (小於 576px) 的特殊優化 */
     @media (max-width: 575.98px) {
+        /* 日期區間從並排改為上下堆疊，增加間距 */
         .search-date-group {
             flex-direction: column;
             gap: 10px !important;
         }
+
+        /* 讓按鈕在手機上全部等寬 100% */
         .btn-mobile-full {
             width: 100%;
             margin-bottom: 10px;
         }
+
+        /* 讓清除重置跟搜尋按鈕並排 */
         .mobile-btn-group {
             display: flex;
             flex-direction: column;
@@ -199,56 +205,66 @@
 
         <!--
             分頁元件
-            對應 Laravel: {{ $list->links('pagination::bootstrap-5') }}
-
-            架構差異（Java vs Laravel）：
-              Laravel paginate() 內建分頁連結生成（Bootstrap 5 格式）
-              Thymeleaf/Spring 無內建等效方法，需手動建立 HTML
-              此處實作行為等同 Laravel Bootstrap 5 分頁樣式：
-                - 上一頁 / 下一頁按鈕
-                - 所有頁碼列表
-                - 當前頁高亮
-                - URL 保留搜尋條件（對應 Laravel 的 withQueryString()）
+            客製化版，對應 Laravel 的 {{ $list->links('pagination::bootstrap-5') }}（Bootstrap 5 樣式）
+             - 顯示第一頁和最後一頁（當前頁距離它們超過一定距離時）
+             - 顯示當前頁附近的幾頁
+             - 使用 ... 代表省略的頁碼
+             - 上一頁/下一頁按鈕會根據當前頁狀態啟用/禁用
         -->
-        <div class="mt-4" th:if="${list.totalPages > 1}">
-            <nav aria-label="頁碼導覽">
+        <div class="mt-4">
+            <nav aria-label="Page navigation" th:if="${list.totalPages > 1}">
                 <ul class="pagination justify-content-center">
-
                     <!-- 上一頁 -->
-                    <li class="page-item" th:classappend="${list.first} ? 'disabled'">
+                    <li class="page-item" th:classappend="${list.number == 0} ? 'disabled'">
                         <a class="page-link pagination-link" href="#"
-                           th:data-page="${currentPage - 1}"
-                           th:if="${!list.first}">上一頁</a>
-                        <span class="page-link" th:if="${list.first}">上一頁</span>
-                    </li>
-
-                    <!-- 頁碼列表（1-indexed，對應 Laravel 預設行為）-->
-                    <li th:each="pageNum : ${pageNumbers}"
-                        class="page-item"
-                        th:classappend="${pageNum == currentPage} ? 'active'">
-                        <a class="page-link pagination-link"
-                           th:text="${pageNum}"
-                           href="#"
-                           th:data-page="${pageNum}">
+                           th:data-page="${list.number}" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
                         </a>
                     </li>
 
-                    <!-- 下一頁 -->
-                    <li class="page-item" th:classappend="${list.last} ? 'disabled'">
-                        <a class="page-link pagination-link" href="#"
-                           th:data-page="${currentPage + 1}"
-                           th:if="${!list.last}">下一頁</a>
-                        <span class="page-link" th:if="${list.last}">下一頁</span>
+                    <!-- 第一頁（總是顯示） -->
+                    <li class="page-item" th:if="${list.number >= 3}" th:classappend="${list.number + 1 == 1} ? 'active'">
+                        <a class="page-link pagination-link" href="#" th:data-page="1">1</a>
                     </li>
 
+                    <!-- 省略號（前） -->
+                    <li class="page-item disabled" th:if="${list.number >= 4}">
+                        <span class="page-link">...</span>
+                    </li>
+
+                    <!-- 當前頁附近的頁碼（顯示前2頁、當前頁、後2頁） -->
+                    <th:block th:with="startPage=${list.number - 1 < 1 ? 1 : list.number - 1}, endPage=${list.number + 3 > list.totalPages ? list.totalPages : list.number + 3}">
+                        <li class="page-item" th:each="i : ${#numbers.sequence(startPage, endPage)}" th:classappend="${i == list.number + 1} ? 'active'">
+                            <a class="page-link pagination-link" href="#"
+                               th:data-page="${i}" th:text="${i}">1</a>
+                        </li>
+                    </th:block>
+
+                    <!-- 省略號（後） -->
+                    <li class="page-item disabled" th:if="${list.number + 4 < list.totalPages}">
+                        <span class="page-link">...</span>
+                    </li>
+
+                    <!-- 最後一頁（總是顯示） -->
+                    <li class="page-item" th:if="${list.number + 3 < list.totalPages}" th:classappend="${list.number + 1 == list.totalPages} ? 'active'">
+                        <a class="page-link pagination-link" href="#"
+                           th:data-page="${list.totalPages}" th:text="${list.totalPages}">10</a>
+                    </li>
+
+                    <!-- 下一頁 -->
+                    <li class="page-item" th:classappend="${list.number + 1 >= list.totalPages} ? 'disabled'">
+                        <a class="page-link pagination-link" href="#"
+                           th:data-page="${list.number + 2}" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
                 </ul>
             </nav>
 
             <!-- 顯示分頁資訊 -->
             <p class="text-center text-muted small">
-                第 <span th:text="${currentPage}"></span> 頁，
-                共 <span th:text="${list.totalPages}"></span> 頁（
-                總計 <span th:text="${list.totalElements}"></span> 筆）
+                第 <span th:text="${currentPage}"></span> 頁，共 <span th:text="${list.totalPages}"></span> 頁（總計 <span th:text="${list.totalElements}"></span> 筆）
+            </p>
             </p>
         </div>
     </div>
