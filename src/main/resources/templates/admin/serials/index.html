@@ -216,13 +216,8 @@
 
                     <!-- 上一頁 -->
                     <li class="page-item" th:classappend="${list.first} ? 'disabled'">
-                        <a class="page-link"
-                           th:href="@{/admin/serials(page=${currentPage - 1},
-                               keyword=${keyword},
-                               content=${searchContent},
-                               status=${status},
-                               date_start=${dateStart},
-                               date_end=${dateEnd})}"
+                        <a class="page-link pagination-link" href="#"
+                           th:data-page="${currentPage - 1}"
                            th:if="${!list.first}">上一頁</a>
                         <span class="page-link" th:if="${list.first}">上一頁</span>
                     </li>
@@ -231,26 +226,17 @@
                     <li th:each="pageNum : ${pageNumbers}"
                         class="page-item"
                         th:classappend="${pageNum == currentPage} ? 'active'">
-                        <a class="page-link"
+                        <a class="page-link pagination-link"
                            th:text="${pageNum}"
-                           th:href="@{/admin/serials(page=${pageNum},
-                               keyword=${keyword},
-                               content=${searchContent},
-                               status=${status},
-                               date_start=${dateStart},
-                               date_end=${dateEnd})}">
+                           href="#"
+                           th:data-page="${pageNum}">
                         </a>
                     </li>
 
                     <!-- 下一頁 -->
                     <li class="page-item" th:classappend="${list.last} ? 'disabled'">
-                        <a class="page-link"
-                           th:href="@{/admin/serials(page=${currentPage + 1},
-                               keyword=${keyword},
-                               content=${searchContent},
-                               status=${status},
-                               date_start=${dateStart},
-                               date_end=${dateEnd})}"
+                        <a class="page-link pagination-link" href="#"
+                           th:data-page="${currentPage + 1}"
                            th:if="${!list.last}">下一頁</a>
                         <span class="page-link" th:if="${list.last}">下一頁</span>
                     </li>
@@ -291,6 +277,16 @@ $(document).ready(function() {
         });
         return params;
     }
+
+    // 分頁連結：與搜尋表單共用同一套 getCleanParamsArray 邏輯，確保 URL 不帶空值參數
+    $(document).on('click', '.pagination-link', function(e) {
+        e.preventDefault();
+        const page = $(this).data('page');
+        const paramsObj = getCleanParamsArray($('#searchForm'));
+        paramsObj['page'] = page;
+        const queryString = $.param(paramsObj);
+        window.location.href = '/admin/serials?' + queryString;
+    });
 
     // 搜尋按鈕
     $('#searchForm').on('submit', function(e) {
