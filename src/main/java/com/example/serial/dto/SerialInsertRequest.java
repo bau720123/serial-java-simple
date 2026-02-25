@@ -36,7 +36,7 @@ public class SerialInsertRequest {
      * 注意：日期格式與業務邏輯驗證在 Controller 層執行
      */
     @JsonProperty("start_date")
-    @NotBlank(message = "活動開始時間A 為必填欄位")
+    @NotBlank(message = "活動開始時間 為必填欄位")
     private String startDate;
 
     /**
