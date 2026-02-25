@@ -444,6 +444,18 @@
     "message": "驗證失敗",
     "errors": {
         "content": [
+            "序號 為必填欄位"
+        ]
+    }
+}
+```
+
+```json
+{
+    "status": "error",
+    "message": "驗證失敗",
+    "errors": {
+        "content": [
             "註銷原因 為必填欄位"
         ]
     }

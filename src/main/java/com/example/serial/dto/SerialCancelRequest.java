@@ -22,9 +22,19 @@ public class SerialCancelRequest {
      * Laravel:
      *   'content' => 'required|array|min:1|max:1000'
      *   'content.*' => 'required|string|size:8'
+     *
+     * 注意（Java vs Laravel 差異）：
+     *   Laravel 的 'required|array|min:1' 對空陣列觸發 "required" 訊息
+     *   Java 的 @Size(min=1, max=1000) 只有一條訊息，無法區分「空陣列」與「超過 1000 筆」
+     *   解法：使用 @Size.List 拆成兩個獨立 @Size 約束，各自帶不同的錯誤訊息：
+     *     - min=1 → 對應 Laravel 'required'（空陣列時顯示「為必填欄位」）
+     *     - max=1000 → 對應 Laravel 'max:1000'（超量時顯示「最多 1000 筆」）
      */
     @NotNull(message = "序號 為必填欄位")
-    @Size(min = 1, max = 1000, message = "序號內容 一次最多只能處理 1000 筆")
+    @Size.List({
+        @Size(min = 1, message = "序號 為必填欄位"),
+        @Size(max = 1000, message = "序號內容 一次最多只能處理 1000 筆")
+    })
     private List<@NotBlank(message = "序號不得為空")
                  @Size(min = 8, max = 8, message = "序號必須是 8 碼字元") String> content;
 
