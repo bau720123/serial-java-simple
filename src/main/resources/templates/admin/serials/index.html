@@ -165,17 +165,27 @@
                             <span th:if="${item.status != 0 && item.status != 1 && item.status != 2}"
                                   class="badge bg-warning text-dark status-badge">未設定</span>
                         </td>
-                        <td th:text="${item.updatedAt != null ? item.updatedAt : '--'}">--</td>
+                        <!--
+                            日期格式化說明：
+                            LocalDateTime.toString() 預設輸出 "2026-02-25T10:47:27.600"（ISO 8601，含 T 和毫秒）
+                            使用 Thymeleaf 的 #temporals.format() 轉換為 "2026-02-25 10:47:27"
+                            對應 Laravel Blade 中的 {{ $item->updated_at }}（Carbon 自動格式化為 Y-m-d H:i:s）
+                        -->
+                        <td th:text="${item.updatedAt != null ?
+                                #temporals.format(item.updatedAt, 'yyyy-MM-dd HH:mm:ss') : '--'}">--</td>
                         <td>
-                            <small th:text="${item.startDate}"></small><br>
-                            <small th:text="${item.endDate}"></small>
+                            <small th:text="${item.startDate != null ?
+                                    #temporals.format(item.startDate, 'yyyy-MM-dd HH:mm:ss') : ''}"></small><br>
+                            <small th:text="${item.endDate != null ?
+                                    #temporals.format(item.endDate, 'yyyy-MM-dd HH:mm:ss') : ''}"></small>
                         </td>
                         <td>
                             <small class="text-muted"
                                    th:text="${item.note != null ? item.note : '-'}">-</small>
                         </td>
                         <td>
-                            <small th:text="${item.createdAt}"></small>
+                            <small th:text="${item.createdAt != null ?
+                                    #temporals.format(item.createdAt, 'yyyy-MM-dd HH:mm:ss') : ''}"></small>
                         </td>
                     </tr>
 

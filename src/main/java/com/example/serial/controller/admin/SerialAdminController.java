@@ -48,6 +48,10 @@ public class SerialAdminController {
     private static final int PAGE_SIZE = 15;    // 對應 Laravel: paginate(15)
     private static final int CHUNK_SIZE = 1000; // 對應 Laravel: chunk(1000, ...)
 
+    // 日期時間格式：對應 Laravel Carbon 的預設輸出格式 "Y-m-d H:i:s"（無毫秒、空格分隔）
+    private static final DateTimeFormatter DT_FORMATTER =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
     // =========================================================================
     // 共用查詢條件建構（對應 Laravel SerialAdminController::common_data()）
     // =========================================================================
@@ -249,16 +253,19 @@ public class SerialAdminController {
                 };
 
                 SerialActivity activity = row.getActivity();
+                // 日期格式化：LocalDateTime 預設 toString() 輸出 "2026-02-25T10:47:27.600"（含 T 和毫秒）
+                // 使用 DT_FORMATTER 轉換為 "2026-02-25 10:47:27"（空格分隔、無毫秒）
+                // 對應 Laravel 的 $row->updated_at（Carbon 物件自動格式化為 Y-m-d H:i:s）
                 printer.printRecord(
                         activity != null ? activity.getActivityName() : "N/A",
                         activity != null ? activity.getActivityUniqueId() : "-",
                         row.getContent(),
                         statusText,
-                        row.getUpdatedAt() != null ? row.getUpdatedAt().toString() : "--",
-                        row.getStartDate(),
-                        row.getEndDate(),
+                        row.getUpdatedAt() != null ? row.getUpdatedAt().format(DT_FORMATTER) : "--",
+                        row.getStartDate() != null ? row.getStartDate().format(DT_FORMATTER) : "",
+                        row.getEndDate() != null ? row.getEndDate().format(DT_FORMATTER) : "",
                         row.getNote() != null ? row.getNote() : "",
-                        row.getCreatedAt()
+                        row.getCreatedAt() != null ? row.getCreatedAt().format(DT_FORMATTER) : ""
                 );
             }
 
@@ -267,22 +274,5 @@ public class SerialAdminController {
 
         printer.flush();
         writer.flush();
-    }
-
-    /**
-     * AJAX 方式匯出 CSV（與 export() 行為完全相同）
-     * 前端 JavaScript 的 $.ajax() 呼叫時，因為設定了 responseType: 'blob'
-     * 所以後端只需要輸出相同的 CSV 串流即可
-     */
-    @GetMapping("/export-ajax")
-    public void exportAjax(
-            @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) String content,
-            @RequestParam(required = false) Integer status,
-            @RequestParam(name = "date_start", required = false) String dateStart,
-            @RequestParam(name = "date_end", required = false) String dateEnd,
-            HttpServletResponse response) throws IOException {
-        // 委派給 export() 方法，行為完全相同
-        export(keyword, content, status, dateStart, dateEnd, response);
     }
 }
