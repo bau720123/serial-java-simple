@@ -12,22 +12,21 @@
 
 ---
 
-完整 Java 25 相容版本
-
 ## 技術棧
 
 | 項目 | 版本 / 技術 |
 |------|------------|
 | 框架 | **Spring Boot 4.0.2** |
-| Java | **Java 25**（完整支援）|
+| Java | **Java 25** |
 | Web 容器 | Tomcat / Servlet 6.1（Jakarta EE 11）|
 | ORM | Spring Data JPA + Hibernate（JPA 3.2）|
 | 模板引擎 | Thymeleaf（後台介面）|
 | 驗證 | Bean Validation 3.1（jakarta.validation）|
 | JSON | Jackson 3 |
 | 資料庫 | SQL Server（mssql-jdbc）|
-| 測試 | JUnit Jupiter 6（暫時沒用到） |
-| 並發 | Virtual Threads（Java 25 原生支援）|
+| CSV 匯出 | Apache Commons CSV 1.12.0 |
+| 程式碼簡化 | Lombok |
+| 測試 | JUnit 5（JUnit Jupiter，暫時沒用到）|
 
 ---
 
@@ -43,14 +42,11 @@ cd serial-java-simple
 ```
 
 ### 2. 設定資料庫連線
-```bash
-# 複製範例配置檔案
-cp application.properties.example src/main/resources/application.properties
-
-# 編輯 application.properties，填入實際的資料庫資訊
-# - spring.datasource.url
-# - spring.datasource.username
-# - spring.datasource.password
+編輯 `src/main/resources/application.properties`，填入實際的資料庫資訊：
+```properties
+spring.datasource.url=jdbc:sqlserver://<HOST>:1433;databaseName=<DB>;encrypt=true;trustServerCertificate=true
+spring.datasource.username=<USERNAME>
+spring.datasource.password=<PASSWORD>
 ```
 
 ### 3. 編譯與啟動
