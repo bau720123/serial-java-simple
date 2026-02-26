@@ -229,50 +229,51 @@ public class SerialAdminController {
         writer.write("\uFEFF"); // UTF-8 BOM
 
         // 使用 Apache Commons CSV（對應 Laravel fputcsv）
-        CSVPrinter printer = new CSVPrinter(writer, CSVFormat.DEFAULT);
+        // try-with-resources：離開區塊時自動呼叫 printer.close()，
+        // close() 內部會先 flush() 再釋放資源，等同 PHP 的 fclose($handle)
+        try (CSVPrinter printer = new CSVPrinter(writer, CSVFormat.DEFAULT)) {
 
-        // 寫入標題列（對應 Laravel: fputcsv($handle, ['活動名稱', ...])）
-        printer.printRecord("活動名稱", "活動唯一ID", "序號", "狀態", "更新時間",
-                "有效期限（起）", "有效期限（迄）", "備註說明", "新增時間");
+            // 寫入標題列（對應 Laravel: fputcsv($handle, ['活動名稱', ...])）
+            printer.printRecord("活動名稱", "活動唯一ID", "序號", "狀態", "更新時間",
+                    "有效期限（起）", "有效期限（迄）", "備註說明", "新增時間");
 
-        // 批次處理資料（對應 Laravel: $query->chunk(1000, function ($serials) use ($handle) {...})）
-        // 使用 Pageable 分頁循環，每次處理 CHUNK_SIZE 筆
-        int pageNum = 0;
-        Page<SerialDetail> chunk;
-        do {
-            PageRequest pageable = PageRequest.of(pageNum, CHUNK_SIZE, Sort.by("id").descending());
-            chunk = detailRepository.findAll(spec, pageable);
+            // 批次處理資料（對應 Laravel: $query->chunk(1000, function ($serials) use ($handle) {...})）
+            // 使用 Pageable 分頁循環，每次處理 CHUNK_SIZE 筆
+            int pageNum = 0;
+            Page<SerialDetail> chunk;
+            do {
+                PageRequest pageable = PageRequest.of(pageNum, CHUNK_SIZE, Sort.by("id").descending());
+                chunk = detailRepository.findAll(spec, pageable);
 
-            for (SerialDetail row : chunk.getContent()) {
-                // 狀態文字轉換（對應 Laravel: match ($row->status) {...}）
-                String statusText = switch (row.getStatus()) {
-                    case 0 -> "未核銷";
-                    case 1 -> "已核銷";
-                    case 2 -> "已註銷";
-                    default -> "未設定";
-                };
+                for (SerialDetail row : chunk.getContent()) {
+                    // 狀態文字轉換（對應 Laravel: match ($row->status) {...}）
+                    String statusText = switch (row.getStatus()) {
+                        case 0 -> "未核銷";
+                        case 1 -> "已核銷";
+                        case 2 -> "已註銷";
+                        default -> "未設定";
+                    };
 
-                SerialActivity activity = row.getActivity();
-                // 日期格式化：LocalDateTime 預設 toString() 輸出 "2026-02-25T10:47:27.600"（含 T 和毫秒）
-                // 使用 DT_FORMATTER 轉換為 "2026-02-25 10:47:27"（空格分隔、無毫秒）
-                // 對應 Laravel 的 $row->updated_at（Carbon 物件自動格式化為 Y-m-d H:i:s）
-                printer.printRecord(
-                        activity != null ? activity.getActivityName() : "N/A",
-                        activity != null ? activity.getActivityUniqueId() : "-",
-                        row.getContent(),
-                        statusText,
-                        row.getUpdatedAt() != null ? row.getUpdatedAt().format(DT_FORMATTER) : "--",
-                        row.getStartDate() != null ? row.getStartDate().format(DT_FORMATTER) : "",
-                        row.getEndDate() != null ? row.getEndDate().format(DT_FORMATTER) : "",
-                        row.getNote() != null ? row.getNote() : "",
-                        row.getCreatedAt() != null ? row.getCreatedAt().format(DT_FORMATTER) : ""
-                );
-            }
+                    SerialActivity activity = row.getActivity();
+                    // 日期格式化：LocalDateTime 預設 toString() 輸出 "2026-02-25T10:47:27.600"（含 T 和毫秒）
+                    // 使用 DT_FORMATTER 轉換為 "2026-02-25 10:47:27"（空格分隔、無毫秒）
+                    // 對應 Laravel 的 $row->updated_at（Carbon 物件自動格式化為 Y-m-d H:i:s）
+                    printer.printRecord(
+                            activity != null ? activity.getActivityName() : "N/A",
+                            activity != null ? activity.getActivityUniqueId() : "-",
+                            row.getContent(),
+                            statusText,
+                            row.getUpdatedAt() != null ? row.getUpdatedAt().format(DT_FORMATTER) : "--",
+                            row.getStartDate() != null ? row.getStartDate().format(DT_FORMATTER) : "",
+                            row.getEndDate() != null ? row.getEndDate().format(DT_FORMATTER) : "",
+                            row.getNote() != null ? row.getNote() : "",
+                            row.getCreatedAt() != null ? row.getCreatedAt().format(DT_FORMATTER) : ""
+                    );
+                }
 
-            pageNum++;
-        } while (chunk.hasNext()); // 對應 Laravel while 的繼續條件
+                pageNum++;
+            } while (chunk.hasNext()); // 對應 Laravel while 的繼續條件
 
-        printer.flush();
-        writer.flush();
+        } // printer.close() 自動執行：flush → 釋放資源
     }
 }
