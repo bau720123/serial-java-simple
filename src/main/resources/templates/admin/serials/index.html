@@ -22,7 +22,6 @@
         .table-container { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .search-box { background: #ffffff; border-radius: 10px; padding: 20px; margin-bottom: 20px; border-left: 5px solid #0d6efd; }
         .status-badge { width: 70px; display: inline-block; text-align: center; }
-        .pagination { --bs-pagination-padding-x: 0.45rem; }
     </style>
     <style>
     /* 針對手機版 (小於 576px) 的特殊優化 */
@@ -44,6 +43,9 @@
             display: flex;
             flex-direction: column;
         }
+
+        /* 讓分頁元件調整 */
+        .pagination { --bs-pagination-padding-x: 0.45rem; }
     }
     </style>
 </head>
@@ -264,7 +266,6 @@
             <!-- 顯示分頁資訊 -->
             <p class="text-center text-muted small">
                 第 <span th:text="${currentPage}"></span> 頁，共 <span th:text="${list.totalPages}"></span> 頁（總計 <span th:text="${list.totalElements}"></span> 筆）
-            </p>
             </p>
         </div>
     </div>
