@@ -44,8 +44,9 @@
             flex-direction: column;
         }
 
-        /* 讓分頁元件調整 */
-        .pagination { --bs-pagination-padding-x: 0.45rem; }
+        /* 讓分頁元件調整 - 以 clamp() 取代硬編碼，讓 padding 隨視窗寬度等比縮放 */
+        /* clamp(最小值, 動態值, 最大值)：在 375px ~ 430px 範圍內自動計算，各機型比例一致 */
+        .pagination { --bs-pagination-padding-x: clamp(0.25rem, 1.5vw, 0.55rem); }
     }
     </style>
 </head>
@@ -95,7 +96,7 @@
                     <option value="2" th:selected="${status != null && status == 2}">已註銷</option>
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-12">
                 <label class="form-label fw-bold">搜尋區間</label>
                 <div class="d-flex gap-2 search-date-group">
                     <input type="date" name="date_start" id="date_start" class="form-control"
