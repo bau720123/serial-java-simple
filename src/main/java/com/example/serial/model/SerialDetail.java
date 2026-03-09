@@ -38,6 +38,9 @@ public class SerialDetail {
     @JoinColumn(name = "serial_activity_id", referencedColumnName = "id")
     private SerialActivity activity;
 
+    // 訂單編號（核銷時傳入，INSERT 時為 null；格式由呼叫方決定）
+    private String orderno;
+
     // 序號內容（格式：1 個大寫英文字母 + 7 位數字，共 8 碼）
     private String content;
 

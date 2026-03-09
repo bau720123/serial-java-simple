@@ -306,6 +306,7 @@ spring.datasource.password=<PASSWORD>
 
 ```json
 {
+    "orderno": "AB123456", // 要使用的訂單編號  
     "content": "B1172060" // 要核銷的序號
 }
 ```
@@ -316,6 +317,7 @@ spring.datasource.password=<PASSWORD>
     "status": "success",
     "message": "核銷成功",
     "data": {
+        "serial_orderno": "AB123456",
         "serial_content": "V8262397",
         "redeemed_at": "年-月-日 時:分:秒"
     }
@@ -323,6 +325,18 @@ spring.datasource.password=<PASSWORD>
 ```
 
 #### ❌ 錯誤回應範例（400 / 422）
+```json
+{
+    "status": "error",
+    "message": "驗證失敗",
+    "errors": {
+        "orderno": [
+            "訂單編號 欄位為必填。"
+        ]
+    }
+}
+```
+
 ```json
 {
     "status": "error",
@@ -574,7 +588,8 @@ CREATE INDEX IX_serial_activity_dates ON serial_activity(start_date, end_date);
 -- 更新後的序號明細表
 CREATE TABLE serial_detail (
     id                 INT IDENTITY(1,1) PRIMARY KEY, -- 自動遞增主鍵
-    serial_activity_id INT NOT NULL,                 -- 關聯活動表 ID
+    serial_activity_id INT NOT NULL,                  -- 關聯活動表 ID
+    orderno            NVARCHAR(8) NULL,              -- 訂單編號
     content            NVARCHAR(8) NOT NULL,          -- 序號內容 (1碼大寫英文+7碼數字)
     status             INT NOT NULL DEFAULT 0,        -- 狀態: 0=未使用, 1=已使用
     note               NVARCHAR(MAX) NULL,            -- 手動新增備註
@@ -587,12 +602,16 @@ CREATE TABLE serial_detail (
     CONSTRAINT UQ_SerialContent UNIQUE (content),
 
     -- 建立外鍵約束，當活動被刪除時，對應的序號也會一併刪除 (依需求決定是否保留)
-    CONSTRAINT FK_serial_detail_activity FOREIGN KEY (serial_activity_id) 
+    CONSTRAINT FK_serial_detail_activity FOREIGN KEY (serial_activity_id)
     REFERENCES serial_activity(id) ON DELETE CASCADE
 );
 
 -- 針對外鍵建立索引，優化查詢特定活動下所有序號的效能
 CREATE INDEX IX_serial_detail_activity_id ON serial_detail(serial_activity_id);
+
+-- 針對訂單編號建立索引，優化查詢效能
+-- 唯一性由應用層的 lockForUpdate + transaction 機制保證，不在 DB 層另設 UNIQUE 約束
+CREATE INDEX IX_serial_detail_orderno ON serial_detail(orderno);
 
 -- 針對狀態建立索引，優化未來「查詢未核銷序號」的效能
 CREATE INDEX IX_serial_detail_status ON serial_detail(status);

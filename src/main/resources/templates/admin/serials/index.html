@@ -77,6 +77,12 @@
                        th:value="${keyword}">
             </div>
             <div class="col-md-3">
+                <label class="form-label fw-bold">訂單編號</label>
+                <input type="text" name="orderno" class="form-control"
+                       placeholder="請輸入訂單編號"
+                       th:value="${orderno}">
+            </div>
+            <div class="col-md-3">
                 <label class="form-label fw-bold">序號</label>
                 <input type="text" name="content" class="form-control"
                        placeholder="請輸入序號"
@@ -122,12 +128,13 @@
                 <thead class="table-light" style="position: sticky; top: 0; z-index: 2;">
                     <tr>
                         <th style="width: 15%;">活動名稱 / ID</th>
+                        <th style="width: 10%;">訂單編號</th>
                         <th style="width: 10%;">序號</th>
                         <th style="width: 10%;">狀態</th>
-                        <th style="width: 15%;">更新時間</th>
-                        <th style="width: 15%;">有效期限 (起~迄)</th>
-                        <th style="width: 20%;">備註說明</th>
-                        <th style="width: 15%;">新增時間</th>
+                        <th style="width: 10%;">更新時間</th>
+                        <th style="width: 10%;">有效期限 (起~迄)</th>
+                        <th style="width: 15%;">備註說明</th>
+                        <th style="width: 10%;">新增時間</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -153,6 +160,7 @@
                                 -
                             </small>
                         </td>
+                        <td th:text="${item.orderno != null ? item.orderno : '-'}">-</td>
                         <td>
                             <code class="fs-5" th:text="${item.content}">--------</code>
                         </td>
@@ -184,7 +192,7 @@
                                 #temporals.format(item.updatedAt, 'yyyy-MM-dd HH:mm:ss') : '--'}">--</td>
                         <td>
                             <small th:text="${item.startDate != null ?
-                                    #temporals.format(item.startDate, 'yyyy-MM-dd HH:mm:ss') : ''}"></small><br>
+                                    #temporals.format(item.startDate, 'yyyy-MM-dd HH:mm:ss') : ''}"></small><br>至<br>
                             <small th:text="${item.endDate != null ?
                                     #temporals.format(item.endDate, 'yyyy-MM-dd HH:mm:ss') : ''}"></small>
                         </td>
@@ -200,7 +208,7 @@
 
                     <!-- 無資料時顯示（對應 Laravel @empty）-->
                     <tr th:if="${list.content.isEmpty()}">
-                        <td colspan="7" class="text-center py-5 text-muted">目前沒有符合條件的資料</td>
+                        <td colspan="8" class="text-center py-5 text-muted">目前沒有符合條件的資料</td>
                     </tr>
                 </tbody>
             </table>

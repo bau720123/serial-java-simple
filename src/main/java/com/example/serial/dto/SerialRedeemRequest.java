@@ -12,6 +12,13 @@ import lombok.Data;
 public class SerialRedeemRequest {
 
     /**
+     * 訂單編號（必填）
+     * Laravel: 'orderno' => 'required|string'
+     */
+    @NotBlank(message = "訂單編號 為必填欄位")
+    private String orderno;
+
+    /**
      * 序號內容（必須恰好 8 碼）
      * Laravel: 'content' => 'required|string|size:8'
      */

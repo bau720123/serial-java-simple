@@ -168,15 +168,26 @@ public class SerialService {
     /**
      * 核銷單一序號
      *
+     * @param orderno 訂單編號（會自動 trim）
      * @param content 序號（會自動 trim + toUpperCase）
      */
     @Transactional
-    public Map<String, Object> redeemSerial(String content) {
+    public Map<String, Object> redeemSerial(String orderno, String content) {
+        // 去前後空白
+        // 對應 Laravel: $orderno = trim($orderno)
+        orderno = orderno.trim();
         // 去前後空白 + 轉大寫
         // 對應 Laravel: $content = strtoupper(trim($content))
         content = content.trim().toUpperCase();
 
         LocalDateTime now = LocalDateTime.now();
+
+        // 查找訂單編號並鎖定（悲觀鎖），確認是否已被其他序號核銷使用
+        // 對應 Laravel: DB::table('serial_detail')->where('orderno', $orderno)->where('status', 1)->lockForUpdate()->first()
+        boolean ordernoUsed = detailRepository.findByOrdernoAndStatusWithLock(orderno, 1).isPresent();
+        if (ordernoUsed) {
+            throw new RuntimeException("該訂單編號已被其它序號所核銷使用，請勿重複使用");
+        }
 
         // 查找序號並鎖定該行（悲觀鎖）
         // 對應 Laravel: DB::table('serial_detail')->where('content', $content)->lockForUpdate()->first()
@@ -199,11 +210,13 @@ public class SerialService {
 
         // 執行核銷（status = 1）
         // 對應 Laravel: DB::table('serial_detail')->where('id', $serial->id)->update([...])
+        serial.setOrderno(orderno);
         serial.setStatus(1);
         serial.setUpdatedAt(now);   // 紀錄真正的核銷時點
         detailRepository.save(serial);
 
         Map<String, Object> result = new LinkedHashMap<>();
+        result.put("serial_orderno", orderno);
         result.put("serial_content", serial.getContent());
         result.put("redeemed_at", now.format(DATE_TIME_FORMATTER));
         return result;

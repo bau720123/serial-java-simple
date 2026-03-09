@@ -19,6 +19,16 @@ public interface SerialDetailRepository extends JpaRepository<SerialDetail, Long
         JpaSpecificationExecutor<SerialDetail> {
 
     /**
+     * 依訂單編號與狀態查詢並鎖定（悲觀鎖），用於防止同一訂單編號重複核銷
+     * 對應 Laravel:
+     *   DB::table('serial_detail')->where('orderno', $orderno)->where('status', 1)->lockForUpdate()->first()
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT s FROM SerialDetail s WHERE s.orderno = :orderno AND s.status = :status")
+    Optional<SerialDetail> findByOrdernoAndStatusWithLock(
+            @Param("orderno") String orderno, @Param("status") int status);
+
+    /**
      * 依序號內容查詢並鎖定該行（悲觀鎖）
      * 對應 Laravel:
      *   DB::table('serial_detail')->where('content', $content)->lockForUpdate()->first()

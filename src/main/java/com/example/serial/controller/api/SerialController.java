@@ -233,7 +233,7 @@ public class SerialController {
         }
 
         try {
-            Map<String, Object> result = serialService.redeemSerial(request.getContent());
+            Map<String, Object> result = serialService.redeemSerial(request.getOrderno(), request.getContent());
 
             Map<String, Object> body = new LinkedHashMap<>();
             body.put("status", "success");

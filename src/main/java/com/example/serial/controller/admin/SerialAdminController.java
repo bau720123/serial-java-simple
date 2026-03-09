@@ -70,7 +70,7 @@ public class SerialAdminController {
      * @param dateEnd     結束日期（格式：yyyy-MM-dd）
      */
     private Specification<SerialDetail> buildSpec(
-            String keyword, String content, Integer status,
+            String keyword, String orderno, String content, Integer status,
             String dateStart, String dateEnd) {
 
         return (root, query, cb) -> {
@@ -89,6 +89,12 @@ public class SerialAdminController {
                         cb.like(activityJoin.get("activityName"), k),
                         cb.like(activityJoin.get("activityUniqueId"), k)
                 ));
+            }
+
+            // ---- 訂單編號搜尋（精確搜尋）----
+            // 對應 Laravel: $query->where('orderno', trim($request->orderno))
+            if (orderno != null && !orderno.trim().isEmpty()) {
+                predicates.add(cb.equal(root.get("orderno"), orderno.trim()));
             }
 
             // ---- 序號搜尋（精確搜尋）----
@@ -147,6 +153,7 @@ public class SerialAdminController {
     @GetMapping
     public String index(
             @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String orderno,
             @RequestParam(required = false) String content,
             @RequestParam(required = false) Integer status,
             @RequestParam(name = "date_start", required = false) String dateStart,
@@ -154,7 +161,7 @@ public class SerialAdminController {
             @RequestParam(defaultValue = "1") int page,
             Model model) {
 
-        Specification<SerialDetail> spec = buildSpec(keyword, content, status, dateStart, dateEnd);
+        Specification<SerialDetail> spec = buildSpec(keyword, orderno, content, status, dateStart, dateEnd);
 
         // 對應 Laravel: $query->paginate(15)->withQueryString()
         // page 參數為 1-indexed（Laravel 預設），轉為 0-indexed 給 Spring
@@ -177,6 +184,7 @@ public class SerialAdminController {
 
         // 傳遞搜尋條件（用於分頁連結和表單預填值）
         model.addAttribute("keyword", keyword);
+        model.addAttribute("orderno", orderno);
         model.addAttribute("searchContent", content);   // 避免與 Thymeleaf 的 content 保留字衝突
         model.addAttribute("status", status);
         model.addAttribute("dateStart", dateStart);
@@ -209,13 +217,14 @@ public class SerialAdminController {
     @GetMapping("/export")
     public void export(
             @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String orderno,
             @RequestParam(required = false) String content,
             @RequestParam(required = false) Integer status,
             @RequestParam(name = "date_start", required = false) String dateStart,
             @RequestParam(name = "date_end", required = false) String dateEnd,
             HttpServletResponse response) throws IOException {
 
-        Specification<SerialDetail> spec = buildSpec(keyword, content, status, dateStart, dateEnd);
+        Specification<SerialDetail> spec = buildSpec(keyword, orderno, content, status, dateStart, dateEnd);
 
         // 設定 Response Header（對應 Laravel $headers 設定）
         String fileName = "serial_export_" +
@@ -234,7 +243,7 @@ public class SerialAdminController {
         try (CSVPrinter printer = new CSVPrinter(writer, CSVFormat.DEFAULT)) {
 
             // 寫入標題列（對應 Laravel: fputcsv($handle, ['活動名稱', ...])）
-            printer.printRecord("活動名稱", "活動唯一ID", "序號", "狀態", "更新時間",
+            printer.printRecord("活動名稱", "活動唯一ID", "訂單編號", "序號", "狀態", "更新時間",
                     "有效期限（起）", "有效期限（迄）", "備註說明", "新增時間");
 
             // 批次處理資料（對應 Laravel: $query->chunk(1000, function ($serials) use ($handle) {...})）
@@ -261,6 +270,7 @@ public class SerialAdminController {
                     printer.printRecord(
                             activity != null ? activity.getActivityName() : "N/A",
                             activity != null ? activity.getActivityUniqueId() : "-",
+                            row.getOrderno() != null ? row.getOrderno() : "-",
                             row.getContent(),
                             statusText,
                             row.getUpdatedAt() != null ? row.getUpdatedAt().format(DT_FORMATTER) : "--",
