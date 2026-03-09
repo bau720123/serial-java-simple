@@ -49,7 +49,21 @@ spring.datasource.username=<USERNAME>
 spring.datasource.password=<PASSWORD>
 ```
 
-### 3. 編譯與啟動
+### 3. Java安裝
+
+- Java 25 LTS (Temurin 或 Oracle JDK)。  
+  開源下載連結：https://adoptium.net/zh-CN/temurin/releases?version=25  
+  官方下載連結（Windows）：https://www.oracle.com/tw/java/technologies/downloads/#jdk25-windows  
+  官方下載連結（Linux）：https://www.oracle.com/tw/java/technologies/downloads/#jdk25-linux  
+
+```powershell
+PS C:\project\serial-java-simple> java -version
+openjdk version "25.0.1" 2025-10-21 LTS
+OpenJDK Runtime Environment Temurin-25.0.1+8 (build 25.0.1+8-LTS)
+OpenJDK 64-Bit Server VM Temurin-25.0.1+8 (build 25.0.1+8-LTS, mixed mode, sharing)
+```
+
+### 4. 編譯與啟動
 ```powershell
 .\mvnw clean spring-boot:run
 ```
