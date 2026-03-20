@@ -680,3 +680,8 @@ CREATE INDEX IX_serial_log_api_name ON serial_log(api_name);
 
 ## 🔒 Iframe 模擬
 <img width="1908" height="994" alt="iframe" src="https://github.com/user-attachments/assets/e79f8541-1666-48dc-8af4-ba9fb63bd15c" />
+
+## 🔒 需要再討論的問題
+1. 不同用途的API應該要設定不同權限的人才能呼叫或是執行，當無該權限的使用者呼叫時，也應該顯示：您無此權限，請洽部門主管
+2. 如何確認 "活動唯一識別碼" 的合法性
+3. 核銷序號之後的後續
