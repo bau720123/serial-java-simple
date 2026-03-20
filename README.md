@@ -67,6 +67,8 @@ OpenJDK 64-Bit Server VM Temurin-25.0.1+8 (build 25.0.1+8-LTS, mixed mode, shari
 ```powershell
 .\mvnw clean spring-boot:run
 ```
+<img width="1108" height="623" alt="螢幕擷取畫面 2026-03-20 095207" src="https://github.com/user-attachments/assets/510f5fbc-6abc-4146-985d-f60103d78d80" />
+
 
 ### 5. 打包與佈署
 ```powershell
