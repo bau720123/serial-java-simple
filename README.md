@@ -68,6 +68,11 @@ OpenJDK 64-Bit Server VM Temurin-25.0.1+8 (build 25.0.1+8-LTS, mixed mode, shari
 .\mvnw clean spring-boot:run
 ```
 
+### 5. 打包與佈署
+```powershell
+.\mvnw clean package -DskipTests
+```
+
 ---
 
 ## 🛠 API 介面詳細定義
