@@ -78,7 +78,7 @@ OpenJDK 64-Bit Server VM Temurin-25.0.1+8 (build 25.0.1+8-LTS, mixed mode, shari
 ```powershell
 .\mvnw clean package -DskipTests
 ```
-<img width="1108" height="623" alt="螢幕擷取畫面 2026-03-20 095207" src="https://github.com/user-attachments/assets/f2884473-9ac3-48bd-9553-3dc7817ae252" />
+<img width="1888" height="941" alt="打包與佈署" src="https://github.com/user-attachments/assets/2f8b09fc-1de4-4a98-a0db-7b6f68f7c8a5" />
 
 ---
 
