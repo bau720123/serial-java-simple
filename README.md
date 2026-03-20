@@ -8,7 +8,7 @@
 - **全域 Middleware**：api.logger
 
 ## 📋 序號管理後台
-- 本地：**Base URL**：http://localhost:8080/admin/serials
+- 本地：http://localhost:8080/admin/serials
 - 測試：**Base URL**：https://172.17.88.28/admin/serials
 - 正式：**Base URL**：http://缺/admin/serials
 ---
