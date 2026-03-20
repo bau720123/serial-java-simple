@@ -3,7 +3,6 @@
 本文件根據最新邏輯編寫，定義了活動建立、序號追加與核心核銷流程。
 
 ## 📋 API入口
-- **Base URL**：http://localhost:8080/api
 - 本地：http://localhost:8080/api
 - 測試：https://172.17.88.28/api
 - 正式：http://缺/admin/api
