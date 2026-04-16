@@ -14,11 +14,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * 序號業務邏輯 Service
@@ -69,51 +67,6 @@ public class SerialService {
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private static final Random RANDOM = new Random();
-
-    // =========================================================================
-    // 新增序號活動
-    // 對應 Laravel SerialService::createActivity()
-    // =========================================================================
-
-    /**
-     * 建立活動
-     *
-     * @param activityName      活動名稱（新增時使用）
-     * @param activityUniqueId  活動唯一 ID
-     * @param startDate         序號開始時間字串
-     * @param endDate           序號結束時間字串
-     */
-    @Transactional
-    public Map<String, Object> createActivity(
-            String activityName,
-            String activityUniqueId,
-            String startDate,
-            String endDate) {
-
-        LocalDateTime now = LocalDateTime.now();
-        LocalDateTime startDt = LocalDateTime.parse(startDate, DATE_TIME_FORMATTER);
-        LocalDateTime endDt = LocalDateTime.parse(endDate, DATE_TIME_FORMATTER);
-
-        Long activityId;
-
-        // ---- 批次新增序號：需建立新活動 ----
-        // 對應 Laravel: DB::table('serial_activity')->insertGetId([...])
-        SerialActivity activity = new SerialActivity();
-        activity.setActivityName(activityName);
-        activity.setActivityUniqueId(activityUniqueId);
-        activity.setStartDate(startDt);
-        activity.setEndDate(endDt);
-        activity.setQuota(0); // 給早期設定時用的預設值
-        activity.setCreatedAt(now);
-        activity.setUpdatedAt(now); // 新增時 created_at 和 updated_at 同時設定
-
-        activity = activityRepository.save(activity);
-        activityId = activity.getId();
-
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("activity_id", activityId);
-        return result;
-    }
 
     // =========================================================================
     // 批次新增序號 & 批次追加序號
@@ -201,14 +154,9 @@ public class SerialService {
         // 批次寫入，對應 Laravel: DB::table('serial_detail')->insert($insertData)
         detailRepository.saveAll(insertData);
 
-        List<String> generatedCodes = insertData.stream()
-            .map(SerialDetail::getContent)
-            .collect(Collectors.toList());
-
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("activity_id", activityId);
         result.put("total_generated", insertData.size());
-        result.put("list", generatedCodes);
         return result;
     }
 
@@ -384,22 +332,6 @@ public class SerialService {
         return finalSerials;
     }
 
-    // 根據MGM的規則
-    private static final Map<Integer, Character> MONTH_PREFIX_MAP = Map.ofEntries(
-        Map.entry(1,  'A'),
-        Map.entry(2,  'B'),
-        Map.entry(3,  'C'),
-        Map.entry(4,  'D'),
-        Map.entry(5,  'E'),
-        Map.entry(6,  'F'),
-        Map.entry(7,  'G'),
-        Map.entry(8,  'H'),
-        Map.entry(9,  'W'),
-        Map.entry(10, 'X'),
-        Map.entry(11, 'Y'),
-        Map.entry(12, 'Z')
-    );
-
     /**
      * 產生隨機序號（1 個大寫英文字母 + 7 位數字）
      * 對應 Laravel SerialService::generateRandomString()
@@ -412,11 +344,9 @@ public class SerialService {
      * Java 版本行為相同：1 個 A-Z 大寫字母 + 7 位數字（1～9999999，左補 0）
      */
     private String generateRandomString() {
-        // char letter = (char) ('A' + RANDOM.nextInt(26));  // A-Z
-        int month = LocalDateTime.now(ZoneId.of("Asia/Taipei")).getMonthValue(); // 現在是幾月
-        char letter = MONTH_PREFIX_MAP.get(month); // 找出對應的字母
-        int number = 1 + RANDOM.nextInt(9999999);  // 1～9999999
-        String numbers = String.format("%07d", number);  // 左補 0 至 7 位
+        char letter = (char) ('A' + RANDOM.nextInt(26));        // A-Z
+        int number = 1 + RANDOM.nextInt(9999999);               // 1～9999999
+        String numbers = String.format("%07d", number);         // 左補 0 至 7 位
         return String.valueOf(letter) + numbers;
     }
 

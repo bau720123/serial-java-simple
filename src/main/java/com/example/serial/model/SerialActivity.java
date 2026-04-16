@@ -26,7 +26,7 @@ public class SerialActivity {
     @Column(name = "activity_name")
     private String activityName;
 
-    // 活動唯一識別碼（在 activity_insert、serials_insert 時需確保唯一性）
+    // 活動唯一識別碼（在 serials_insert 時需確保唯一性）
     @Column(name = "activity_unique_id", unique = true)
     private String activityUniqueId;
 
