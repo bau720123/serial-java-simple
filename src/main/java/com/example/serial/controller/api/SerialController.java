@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
  * 對應 Laravel: app/Http/Controllers/Api/SerialController.php
  *
  * 路由對應：
+ *   POST /api/activity_insert          → activity_insert()
  *   POST /api/serials_insert           → serials_insert()
  *   POST /api/serials_additional_insert → serials_additional_insert()
  *   POST /api/serials_redeem           → serials_redeem()
@@ -42,6 +43,92 @@ public class SerialController {
 
     @Autowired
     private SerialActivityRepository activityRepository;
+
+    // =========================================================================
+    // POST /api/activity_insert - 新增活動
+    // 對應 Laravel SerialController::activity_insert()
+    // =========================================================================
+
+    @PostMapping("/activity_insert")
+    public ResponseEntity<Map<String, Object>> activity_insert(
+            @Valid @RequestBody ActivityInsertRequest request,
+            BindingResult bindingResult) {
+
+        // 基本格式驗證（@NotBlank, @Min, @Max 等）
+        if (bindingResult.hasErrors()) {
+            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_CONTENT)
+                    .body(buildValidationError(bindingResult));
+        }
+
+        // 補充驗證（需查詢 DB 或跨欄位比較）
+        // 對應 Laravel 的 'unique', 'date_format', 'after', 'after_or_equal' 規則
+        Map<String, List<String>> extraErrors = new LinkedHashMap<>();
+
+        // 驗證日期格式
+        LocalDateTime startDt = null, endDt = null;
+        try {
+            startDt = SerialService.parseDateTime(request.getStartDate());
+        } catch (DateTimeParseException e) {
+            extraErrors.computeIfAbsent("start_date", k -> new ArrayList<>())
+                    .add("活動開始時間 格式必須為 yyyy-MM-dd HH:mm:ss");
+        }
+        try {
+            endDt = SerialService.parseDateTime(request.getEndDate());
+        } catch (DateTimeParseException e) {
+            extraErrors.computeIfAbsent("end_date", k -> new ArrayList<>())
+                    .add("活動結束時間 格式必須為 yyyy-MM-dd HH:mm:ss");
+        }
+
+        if (startDt != null && endDt != null) {
+            // end_date 必須晚於或等於 start_date（對應 Laravel: after_or_equal:start_date）
+            if (endDt.isBefore(startDt)) {
+                extraErrors.computeIfAbsent("end_date", k -> new ArrayList<>())
+                        .add("活動結束時間 必須晚於或等於 開始日期");
+            }
+            // end_date 必須晚於現在（對應 Laravel: after:now）
+            if (!endDt.isAfter(LocalDateTime.now())) {
+                extraErrors.computeIfAbsent("end_date", k -> new ArrayList<>())
+                        .add("活動結束時間 不能早於當前時間，否則序號將立即過期");
+            }
+        }
+
+        // 驗證 activity_unique_id 唯一性（對應 Laravel: unique:SerialActivity,activity_unique_id）
+        if (activityRepository.existsByActivityUniqueId(request.getActivityUniqueId())) {
+            extraErrors.computeIfAbsent("activity_unique_id", k -> new ArrayList<>())
+                    .add("活動唯一識別碼 已存在，請勿重複新增");
+        }
+
+        if (!extraErrors.isEmpty()) {
+            Map<String, Object> body = new LinkedHashMap<>();
+            body.put("status", "error");
+            body.put("message", "驗證失敗");
+            body.put("errors", extraErrors);
+            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_CONTENT).body(body);
+        }
+
+        try {
+            Map<String, Object> result = serialService.createActivity(
+                    request.getActivityName(),
+                    request.getActivityUniqueId(),
+                    request.getStartDate(),
+                    request.getEndDate()
+            );
+
+            Map<String, Object> body = new LinkedHashMap<>();
+            body.put("status", "success");
+            body.put("message", "活動已成功產生");
+            body.put("data", result);
+            return ResponseEntity.status(HttpStatus.CREATED).body(body);
+
+        } catch (Exception e) {
+            // 對應 Laravel: catch (Exception $e) → 500 response
+            Map<String, Object> body = new LinkedHashMap<>();
+            body.put("status", "error");
+            body.put("message", "系統處理失敗");
+            body.put("debug", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
+        }
+    }
 
     // =========================================================================
     // POST /api/serials_insert - 批次新增序號

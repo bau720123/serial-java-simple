@@ -51,6 +51,7 @@ public class ApiLoggerFilter extends OncePerRequestFilter {
      * 對應 Laravel: $request->route()->getName()（路由命名）
      */
     private static final Map<String, String> API_NAME_MAP = Map.of(
+            "/api/activity_insert",            "新增序號活動",
             "/api/serials_insert",             "批次新增序號",
             "/api/serials_additional_insert",  "批次追加序號",
             "/api/serials_redeem",             "核銷序號",

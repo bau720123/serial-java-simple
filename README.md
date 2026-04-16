@@ -84,11 +84,11 @@ OpenJDK 64-Bit Server VM Temurin-25.0.1+8 (build 25.0.1+8-LTS, mixed mode, shari
 
 ## 🛠 API 介面詳細定義
 
-### 1. 批次新增序號
-- **路由名稱（Route Name）**：批次新增序號
-- **Endpoint**：/serials_insert
+### 1. 新增序號活動
+- **路由名稱（Route Name）**：新增序號活動
+- **Endpoint**：/activity_insert
 - **Method**：POST
-- **說明**：初始化活動並產出第一批隨機唯一序號。
+- **說明**：新增序號的活動，以利未來追加序號所用。
 
 #### 📥 Request Parameters（JSON）
 | 欄位名稱 | 型態 | 必填 | 說明 |
@@ -97,7 +97,6 @@ OpenJDK 64-Bit Server VM Temurin-25.0.1+8 (build 25.0.1+8-LTS, mixed mode, shari
 | activity_unique_id | String | 是 | 活動唯一識別碼（需全系統唯一） |
 | start_date | DateTime| 是 | 生效日（格式: YYYY-MM-DD HH:mm:ss） |
 | end_date | DateTime| 是 | 失效日（需晚於現在時間且晚於生效日） |
-| quota | Integer | 是 | 產出筆數（範圍: 1 ~ 100） |
 
 ```json
 {
@@ -105,7 +104,6 @@ OpenJDK 64-Bit Server VM Temurin-25.0.1+8 (build 25.0.1+8-LTS, mixed mode, shari
     "activity_unique_id": "spring_004",
     "start_date": "2026-01-28 16:00:00",
     "end_date": "2026-02-15 23:59:59",
-    "quota": 100
 }
 ```
 
@@ -115,8 +113,7 @@ OpenJDK 64-Bit Server VM Temurin-25.0.1+8 (build 25.0.1+8-LTS, mixed mode, shari
     "status": "success",
     "message": "活動與序號已成功產生",
     "data": {
-        "activity_id": 4, // 會返回該活動的流水ID
-        "total_generated": 100 // 會返回總共產生的組數
+        "activity_id": 4 // 會返回該活動的流水ID
     }
 }
 ```
@@ -138,9 +135,6 @@ OpenJDK 64-Bit Server VM Temurin-25.0.1+8 (build 25.0.1+8-LTS, mixed mode, shari
         ],
         "end_date": [
             "活動結束時間 為必填欄位"
-        ],
-        "quota": [
-            "序號配額 為必填欄位"
         ]
     }
 }
@@ -186,19 +180,6 @@ OpenJDK 64-Bit Server VM Temurin-25.0.1+8 (build 25.0.1+8-LTS, mixed mode, shari
 }
 ```
 
-```json
-{
-    "status": "error",
-    "message": "驗證失敗",
-    "errors": {
-        "quota": [
-            "序號配額 最小值為 1",
-            "序號配額 最大值為 100"
-        ]
-    }
-}
-```
-
 ---
 
 ### 2. 批次追加序號
@@ -233,7 +214,12 @@ OpenJDK 64-Bit Server VM Temurin-25.0.1+8 (build 25.0.1+8-LTS, mixed mode, shari
     "message": "序號已成功產生",
     "data": {
         "activity_id": 4, // 會返回該活動的ID
-        "total_generated": 100 // 會返回總共產生的組數
+        "total_generated": 3, // 會返回總共產生的組數
+        "list": [
+            "AX9201",
+            "BX8832",
+            "CK7741"
+        ]
     }
 }
 ```
